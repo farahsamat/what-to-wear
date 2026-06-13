@@ -5,10 +5,7 @@ const STORAGE_KEYS = {
   PROFILE: 'what_to_wear_user_profile',
   VERSION: 'what_to_wear_seed_version_w',
   CUSTOM_SHOPS: 'what_to_wear_custom_shops',
-  LOGIN_STATE: 'what_to_wear_login_state',
-  PROMPT_TEMPLATE: 'what_to_wear_prompt_template',
-  OPENAI_KEY: 'what_to_wear_openai_key',
-  GENERATED_AVATAR: 'what_to_wear_generated_avatar'
+  LOGIN_STATE: 'what_to_wear_login_state'
 };
 
 const DEFAULT_CLOSET = [
@@ -402,30 +399,4 @@ export const getLoginState = () => {
 
 export const saveLoginState = (state) => {
   localStorage.setItem(STORAGE_KEYS.LOGIN_STATE, JSON.stringify(state));
-};
-
-export const getPromptTemplate = () => {
-  const data = localStorage.getItem(STORAGE_KEYS.PROMPT_TEMPLATE);
-  const defaultPrompt = `Create an elegant, animation‑style full‑body avatar based on the provided selfie. Preserve the facial structure, skin tone, and hair details so the character clearly resembles the person in the photo. Body proportions should reflect a height of [HEIGHT_PLACEHOLDER] cm and weight of [WEIGHT_PLACEHOLDER] kg, with a naturally balanced silhouette. Style: refined and graceful animation look with smooth shading, soft lighting, subtle highlights, and a poised, confident posture. Outfit: [OUTFIT_PLACEHOLDER]. Footwear: [FOOTWEAR_PLACEHOLDER]. Accessories: [ACCESSORIES_PLACEHOLDER]. Background simple and unobtrusive.`;
-  return data || defaultPrompt;
-};
-
-export const savePromptTemplate = (prompt) => {
-  localStorage.setItem(STORAGE_KEYS.PROMPT_TEMPLATE, prompt);
-};
-
-export const getOpenAIKey = () => {
-  return localStorage.getItem(STORAGE_KEYS.OPENAI_KEY) || '';
-};
-
-export const saveOpenAIKey = (key) => {
-  localStorage.setItem(STORAGE_KEYS.OPENAI_KEY, key);
-};
-
-export const getGeneratedAvatar = () => {
-  return localStorage.getItem(STORAGE_KEYS.GENERATED_AVATAR) || '';
-};
-
-export const saveGeneratedAvatar = (url) => {
-  localStorage.setItem(STORAGE_KEYS.GENERATED_AVATAR, url);
 };
