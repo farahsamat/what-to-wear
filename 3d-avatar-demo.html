@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Standalone 3D Mannequin Lab</title>
+  
+  <!-- Premium Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-dark: #09090b;
+      --card-bg: rgba(22, 22, 28, 0.7);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --accent-gradient: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+      --accent-primary: #a855f7;
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+    }
+
+    /* Mannequin Canvas Container */
+    #canvas-container {
+      flex: 1;
+      height: 100%;
+      position: relative;
+    }
+
+    /* Control Sidebar */
+    #sidebar {
+      width: 360px;
+      height: 100%;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-left: 1px solid var(--border-color);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow-y: auto;
+      z-index: 10;
+      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+    }
+
+    h2 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .value-display {
+      font-weight: 700;
+      color: var(--accent-primary);
+    }
+
+    /* Styled Range Slider */
+    .slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.08);
+      outline: none;
+    }
+
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
+      transition: transform 0.15s ease;
+    }
+
+    .slider::-webkit-slider-thumb:active {
+      transform: scale(1.2);
+    }
+
+    /* Grid of button selectors */
+    .grid-selector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .btn.active {
+      background: rgba(168, 85, 247, 0.15);
+      border-color: var(--accent-primary);
+      color: var(--text-primary);
+      box-shadow: 0 0 8px rgba(168, 85, 247, 0.25);
+    }
+
+    /* Color Palette Picker */
+    .color-picker {
+      display: flex;
+      gap: 12px;
+    }
+
+    .color-swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s;
+      border: 2px solid transparent;
+    }
+
+    .color-swatch.active {
+      border-color: white;
+      transform: scale(1.1);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .swatch-fair { background-color: #fed7aa; }
+    .swatch-honey { background-color: #e0ac69; }
+    .swatch-olive { background-color: #c68642; }
+    .swatch-espresso { background-color: #5c4033; }
+
+    /* Technical details display */
+    .blueprint-box {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.65rem;
+      font-family: monospace;
+      color: #c084fc;
+      line-height: 1.5;
+    }
+
+    .tooltip {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(9, 9, 11, 0.75);
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      font-size: 0.7rem;
+      pointer-events: none;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 3D WebGL Canvas Viewport -->
+  <div id="canvas-container">
+    <div class="tooltip">Left Click + Drag: Rotate | Right Click + Drag: Pan | Scroll: Zoom</div>
+  </div>
+
+  <!-- Sidebar Controllers -->
+  <div id="sidebar">
+    <div>
+      <h1>3D Mannequin Lab</h1>
+      <p class="subtitle">Programmatic avatar morphing simulator. Observe how one model can be reshaped using standard browser code.</p>
+    </div>
+
+    <!-- Height Slider -->
+    <div class="form-group">
+      <div class="label-row">
+        <span>Height</span>
+        <span class="value-display" id="height-val">170 cm</span>
+      </div>
+      <input type="range" min="140" max="210" value="170" class="slider" id="height-slider">
+    </div>
+
+    <!-- Weight Slider -->
+    <div class="form-group">
+      <div class="label-row">
+        <span>Weight</span>
+        <span class="value-display" id="weight-val">65 kg</span>
+      </div>
+      <input type="range" min="40" max="130" value="65" class="slider" id="weight-slider">
+    </div>
+
+    <!-- Gender Proportions Selector -->
+    <div class="form-group">
+      <h2>Gender Proportions</h2>
+      <div class="grid-selector">
+        <button class="btn" id="gender-female">Feminine</button>
+        <button class="btn active" id="gender-neutral">Neutral</button>
+        <button class="btn" id="gender-male">Masculine</button>
+      </div>
+    </div>
+
+    <!-- Skin Tone Picker -->
+    <div class="form-group">
+      <h2>Mannequin Skin Tone</h2>
+      <div class="color-picker">
+        <div class="color-swatch swatch-fair active" data-color="#fed7aa" data-name="fair"></div>
+        <div class="color-swatch swatch-honey" data-color="#e0ac69" data-name="honey"></div>
+        <div class="color-swatch swatch-olive" data-color="#c68642" data-name="olive"></div>
+        <div class="color-swatch swatch-espresso" data-color="#5c4033" data-name="espresso"></div>
+      </div>
+    </div>
+
+    <!-- Dev Blueprint Info -->
+    <div class="form-group" style="margin-top: auto;">
+      <h2>Developer Blueprint</h2>
+      <div class="blueprint-box" id="blueprint-debug">
+        // Real-Time 3D Transform Logs<br>
+        heightRatio: 1.000<br>
+        weightRatio: 1.000<br>
+        shoulderScale: 1.000<br>
+        hipScale: 1.000<br>
+        materialColor: #fed7aa
+      </div>
+    </div>
+  </div>
+
+  <!-- CDN scripts: Three.js and OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    // --- 1. SETUP THREE.JS SCENE ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e0e11);
+    
+    // Add Fog for premium depth effect
+    scene.fog = new THREE.FogExp2(0x0e0e11, 0.15);
+
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(0, 1.2, 3.2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    // Orbit Controls for interaction
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 + 0.1; // Limit rotating below ground
+    controls.minDistance = 1.2;
+    controls.maxDistance = 6;
+    controls.target.set(0, 0.9, 0);
+
+    // --- 2. LIGHTING SYSTEM ---
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+    scene.add(ambientLight);
+
+    const mainLight = new THREE.DirectionalLight(0xffffff, 0.85);
+    mainLight.position.set(3, 6, 4);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 1024;
+    mainLight.shadow.mapSize.height = 1024;
+    mainLight.shadow.bias = -0.001;
+    scene.add(mainLight);
+
+    // Subtle blue fill light from opposite side
+    const fillLight = new THREE.DirectionalLight(0x3b82f6, 0.4);
+    fillLight.position.set(-3, 2, -2);
+    scene.add(fillLight);
+
+    // Grid Floor
+    const grid = new THREE.GridHelper(10, 20, 0xffffff, 0x1f1f2e);
+    grid.position.y = 0;
+    scene.add(grid);
+
+    // Ground reflector disc
+    const stageGeo = new THREE.RingGeometry(0, 1.2, 32);
+    const stageMat = new THREE.MeshBasicMaterial({ color: 0x16161c, side: THREE.DoubleSide });
+    const stage = new THREE.Mesh(stageGeo, stageMat);
+    stage.rotation.x = Math.PI / 2;
+    stage.position.y = 0.001;
+    scene.add(stage);
+
+    // --- 3. BUILD SEGMENTED MANNEQUIN GROUP ---
+    const mannequinGroup = new THREE.Group();
+    scene.add(mannequinGroup);
+
+    // Standard shared material
+    const skinMaterial = new THREE.MeshStandardMaterial({
+      color: 0xfed7aa,
+      roughness: 0.6,
+      metalness: 0.1
+    });
+
+    // Mesh part references
+    const meshes = {};
+
+    function addPart(name, geometry, yOffset, scaleX = 1, scaleZ = 1) {
+      const mesh = new THREE.Mesh(geometry, skinMaterial);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mannequinGroup.add(mesh);
+      
+      // Store local reference
+      meshes[name] = {
+        mesh: mesh,
+        defaultY: yOffset,
+        scaleX: scaleX,
+        scaleZ: scaleZ
+      };
+    }
+
+    // Geometries
+    const headGeo = new THREE.SphereGeometry(0.1, 32, 32);
+    const neckGeo = new THREE.CylinderGeometry(0.035, 0.04, 0.08, 16);
+    const chestGeo = new THREE.CylinderGeometry(0.14, 0.11, 0.35, 16);
+    const pelvisGeo = new THREE.SphereGeometry(0.115, 16, 16);
+    const limbGeo = new THREE.CylinderGeometry(0.04, 0.03, 0.45, 16);
+
+    // Assemble mannequin parts (coordinates relative to standard 170cm height mannequin)
+    addPart('head', headGeo, 1.58);
+    addPart('neck', neckGeo, 1.48);
+    addPart('chest', chestGeo, 1.26);
+    addPart('pelvis', pelvisGeo, 0.94);
+    
+    // Legs
+    addPart('leftLeg', limbGeo, 0.48);
+    addPart('rightLeg', limbGeo, 0.48);
+
+    // Arms
+    addPart('leftArm', limbGeo, 1.24);
+    addPart('rightArm', limbGeo, 1.24);
+
+    // --- 4. MORPHING FORMULAS & CONTROLS ---
+    let height = 170;
+    let weight = 65;
+    let gender = 'neutral';
+    let skinColor = '#fed7aa';
+
+    function updateMorphing() {
+      // Proportions math
+      const hRatio = height / 170;
+      const wRatio = weight / 65;
+
+      // Sizing Multipliers based on Gender Coordinates
+      let shoulderMult = 1.0;
+      let hipMult = 1.0;
+      let waistMult = 1.0;
+
+      if (gender === 'female') {
+        shoulderMult = 0.85;
+        hipMult = 1.2;
+        waistMult = 0.9;
+      } else if (gender === 'male') {
+        shoulderMult = 1.2;
+        hipMult = 0.85;
+        waistMult = 1.05;
+      }
+
+      // 1. Calculate dynamic offsets
+      const legLength = 0.9 * hRatio;
+      const torsoHeight = 0.4 * hRatio;
+      const neckHeight = 0.08 * hRatio;
+      const headRadius = 0.1 * hRatio;
+
+      const legThickness = 0.05 * Math.sqrt(wRatio);
+      const torsoThickness = 0.13 * Math.sqrt(wRatio);
+      const armThickness = 0.038 * Math.sqrt(wRatio);
+
+      // 2. Scale & Reposition Legs
+      const hipSpacing = 0.11 * Math.sqrt(wRatio) * hipMult;
+      
+      meshes.leftLeg.mesh.scale.set(legThickness / 0.04, legLength / 0.45, legThickness / 0.04);
+      meshes.leftLeg.mesh.position.set(-hipSpacing, legLength / 2, 0);
+
+      meshes.rightLeg.mesh.scale.set(legThickness / 0.04, legLength / 0.45, legThickness / 0.04);
+      meshes.rightLeg.mesh.position.set(hipSpacing, legLength / 2, 0);
+
+      // 3. Scale & Reposition Pelvis
+      meshes.pelvis.mesh.scale.set((0.115 * Math.sqrt(wRatio) * hipMult) / 0.115, hRatio, (0.115 * Math.sqrt(wRatio)) / 0.115);
+      meshes.pelvis.mesh.position.set(0, legLength, 0);
+
+      // 4. Scale & Reposition Chest (Torso)
+      const shoulderSpacing = 0.16 * Math.sqrt(wRatio) * shoulderMult;
+      
+      meshes.chest.mesh.scale.set((0.14 * Math.sqrt(wRatio) * shoulderMult) / 0.14, torsoHeight / 0.35, (0.14 * Math.sqrt(wRatio)) / 0.14);
+      meshes.chest.mesh.position.set(0, legLength + torsoHeight / 2, 0);
+
+      // 5. Scale & Reposition Arms
+      meshes.leftArm.mesh.scale.set(armThickness / 0.04, legLength / 0.45, armThickness / 0.04);
+      meshes.leftArm.mesh.position.set(-shoulderSpacing - 0.05, legLength + torsoHeight - 0.25 * hRatio, 0);
+      
+      meshes.rightArm.mesh.scale.set(armThickness / 0.04, legLength / 0.45, armThickness / 0.04);
+      meshes.rightArm.mesh.position.set(shoulderSpacing + 0.05, legLength + torsoHeight - 0.25 * hRatio, 0);
+
+      // 6. Scale & Reposition Neck & Head
+      meshes.neck.mesh.scale.set(wRatio * 0.9, hRatio, wRatio * 0.9);
+      meshes.neck.mesh.position.set(0, legLength + torsoHeight + neckHeight / 2, 0);
+
+      meshes.head.mesh.scale.set(hRatio, hRatio, hRatio);
+      meshes.head.mesh.position.set(0, legLength + torsoHeight + neckHeight + headRadius, 0);
+
+      // Update color material
+      skinMaterial.color.set(skinColor);
+
+      // Update debug log UI
+      document.getElementById('blueprint-debug').innerHTML = `
+// Real-Time 3D Transform Logs
+heightRatio: ${hRatio.toFixed(3)}
+weightRatio: ${wRatio.toFixed(3)}
+shoulderScale: ${(Math.sqrt(wRatio) * shoulderMult).toFixed(3)}
+hipScale: ${(Math.sqrt(wRatio) * hipMult).toFixed(3)}
+materialColor: ${skinColor}
+      `.trim();
+    }
+
+    // --- 5. EVENT LISTENERS FOR CONTROLS ---
+    // Sliders
+    const heightSlider = document.getElementById('height-slider');
+    const heightVal = document.getElementById('height-val');
+    heightSlider.addEventListener('input', (e) => {
+      height = parseInt(e.target.value);
+      heightVal.innerText = `${height} cm`;
+      updateMorphing();
+    });
+
+    const weightSlider = document.getElementById('weight-slider');
+    const weightVal = document.getElementById('weight-val');
+    weightSlider.addEventListener('input', (e) => {
+      weight = parseInt(e.target.value);
+      weightVal.innerText = `${weight} kg`;
+      updateMorphing();
+    });
+
+    // Gender Buttons
+    const genders = ['female', 'neutral', 'male'];
+    genders.forEach(g => {
+      const btn = document.getElementById(`gender-${g}`);
+      btn.addEventListener('click', () => {
+        genders.forEach(x => document.getElementById(`gender-${x}`).classList.remove('active'));
+        btn.classList.add('active');
+        gender = g;
+        updateMorphing();
+      });
+    });
+
+    // Skin Tone Selector
+    const swatches = document.querySelectorAll('.color-swatch');
+    swatches.forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        swatches.forEach(s => s.classList.remove('active'));
+        swatch.classList.add('active');
+        skinColor = swatch.getAttribute('data-color');
+        updateMorphing();
+      });
+    });
+
+    // Initial Trigger
+    updateMorphing();
+
+    // --- 6. WINDOW RESIZE ---
+    window.addEventListener('resize', () => {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    // --- 7. ANIMATION LOOP ---
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      // Auto-rotate scene subtly when user isn't interacting
+      if (!controls.state === -1) {
+        mannequinGroup.rotation.y += 0.002;
+      }
+      
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
