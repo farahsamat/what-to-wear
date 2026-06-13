@@ -51,7 +51,7 @@ Using an **agentic, plan-driven pair programming workflow**, the agent assisted 
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/<your-username>/what-to-wear.git
+   git clone https://github.com/farahsamat/what-to-wear.git
    cd what-to-wear
    ```
 
