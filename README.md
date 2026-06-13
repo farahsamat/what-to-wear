@@ -1,6 +1,6 @@
 # What To Wear 👗👔
 
-*What To Wear* is a modern, responsive mobile-first digital wardrobe planner and styling assistant. It helps you track the clothes you own, visualizes them on a customizable 3D-styled mannequin, and suggests outfits based on the weather and your activities.
+*What To Wear* is a modern, responsive mobile-first digital wardrobe planner and styling assistant. It helps you track the clothes you own, visualizes them on a customizable interactive mannequin, and suggests outfits based on the weather and your activities.
 
 ---
 
